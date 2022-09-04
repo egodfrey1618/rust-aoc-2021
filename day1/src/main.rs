@@ -1,5 +1,4 @@
-use std::fs::File;
-use std::io::prelude::*;
+use std::fs::read_to_string;
 
 fn solve(measurements: &[u32]) -> u32 {
     (0..measurements.len() - 1)
@@ -21,11 +20,7 @@ fn solve2(measurements: &[u32]) -> u32 {
 }
 
 fn main() {
-    let mut file = File::open("input").expect("Failed to open input file");
-    let mut s = String::new();
-    file.read_to_string(&mut s)
-        .expect("Failed to read from file");
-
+    let s = read_to_string("input").expect("Failed to read input file");
     let input: Vec<u32> = s
         .split('\n')
         .filter(|s| !s.is_empty())
