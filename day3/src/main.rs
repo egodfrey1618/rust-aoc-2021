@@ -71,7 +71,10 @@ fn epsilon_rate_of_gamma_rate(gamma_rate: usize, number_of_bits: usize) -> usize
     gamma_rate ^ mask
 }
 
-fn oxygen_generator_rating(input: &[usize]) -> usize {
+fn filter_using_bitpattern_until_unique(
+    input: &[usize],
+    keep_bit: fn(BitPattern) -> usize,
+) -> usize {
     let number_of_bits = number_of_bits(input);
     let input_as_vec = input.to_vec();
     let surviving_values = (0..number_of_bits)
@@ -80,13 +83,7 @@ fn oxygen_generator_rating(input: &[usize]) -> usize {
             1 => values,
             0 => panic!("filter_readings_until_unique got empty list"),
             _ => {
-                let keep_bit = match bit_pattern(&values, bit) {
-                    BitPattern::AllOnes => 1,
-                    BitPattern::MoreOnesThanZeros => 1,
-                    BitPattern::AllZeros => 0,
-                    BitPattern::MoreZerosThanOnes => 0,
-                    BitPattern::Equal => 1,
-                };
+                let keep_bit = keep_bit(bit_pattern(&values, bit));
                 values
                     .iter()
                     .filter(|x| get_bit(**x, bit) == keep_bit)
@@ -97,36 +94,33 @@ fn oxygen_generator_rating(input: &[usize]) -> usize {
 
     surviving_values[0]
 }
+fn oxygen_generator_rating(input: &[usize]) -> usize {
+    fn keep_majority_bit(bit_pattern: BitPattern) -> usize {
+        match bit_pattern {
+            BitPattern::AllOnes => 1,
+            BitPattern::MoreOnesThanZeros => 1,
+            BitPattern::AllZeros => 0,
+            BitPattern::MoreZerosThanOnes => 0,
+            BitPattern::Equal => 1,
+        }
+    }
 
-// There's a lot of code duplication between this and the oxygen generator. I struggled to remove this with a closure.
-// The only difference is in what we take for the BitPattern.
+    filter_using_bitpattern_until_unique(input, keep_majority_bit)
+}
+
 fn co2_scrubber_rating(input: &[usize]) -> usize {
-    let number_of_bits = number_of_bits(input);
-    let input_as_vec = input.to_vec();
-    let surviving_values = (0..number_of_bits)
-        .rev()
-        .fold(input_as_vec, |values, bit| match values.len() {
-            1 => values,
-            0 => panic!("filter_readings_until_unique got empty list"),
-            _ => {
-                let keep_bit = match bit_pattern(&values, bit) {
-                    // This is not quite the opposite of the pattern in oxygen scrubber.
-                    // If they're all the same, we want to keep that one, rather than chuck everything out.
-                    BitPattern::AllOnes => 1,
-                    BitPattern::MoreOnesThanZeros => 0,
-                    BitPattern::AllZeros => 0,
-                    BitPattern::MoreZerosThanOnes => 1,
-                    BitPattern::Equal => 0,
-                };
-                values
-                    .iter()
-                    .filter(|x| get_bit(**x, bit) == keep_bit)
-                    .copied()
-                    .collect::<Vec<usize>>()
-            }
-        });
-
-    surviving_values[0]
+    fn keep_minority_bit(bit_pattern: BitPattern) -> usize {
+        match bit_pattern {
+            // This is not quite the opposite of the pattern in oxygen scrubber.
+            // If they're all the same, we want to keep that one, rather than chuck everything out.
+            BitPattern::AllOnes => 1,
+            BitPattern::MoreOnesThanZeros => 0,
+            BitPattern::AllZeros => 0,
+            BitPattern::MoreZerosThanOnes => 1,
+            BitPattern::Equal => 0,
+        }
+    }
+    filter_using_bitpattern_until_unique(input, keep_minority_bit)
 }
 
 fn solve(input: &[usize]) -> usize {
